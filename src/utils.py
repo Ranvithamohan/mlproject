@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.metrics import r2_score
+from sklearn.model_selection import GridSearchCV
 
 
 
@@ -25,16 +26,29 @@ def save_object(file_path, obj) :
 
 
 
-def evaluate_models(X_train,y_train,X_test,y_test,models) :
+def evaluate_models(X_train,y_train,X_test,y_test,models,param) :
     try:
         report = {}
         for i in range(len(list(models))):
-            model = list(models.values())[i]
+            model_name = list(models.keys())[i]  # Get model name
+            model = models[model_name]  # Get model object
+            para = param.get(model_name, {})
+            if para:
+                gs = GridSearchCV(model, para, cv=3)
+                gs.fit(X_train, y_train)
+                best_model = gs.best_estimator_
+            else:
+                best_model = model
 
-            model.fit(X_train,y_train)  #train the model
+            best_model.fit(X_train, y_train)
 
-            y_train_pred = model.predict(X_train)
-            y_test_pred = model.predict(X_test)
+
+           
+
+            # model.fit(X_train,y_train)  #train the model
+
+            y_train_pred = best_model.predict(X_train)
+            y_test_pred = best_model.predict(X_test)
 
             train_model_score = r2_score(y_train,y_train_pred)
             test_model_score = r2_score(y_test,y_test_pred)
